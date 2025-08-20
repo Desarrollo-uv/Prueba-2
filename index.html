@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación Modular - CNCI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f4f8;
+        }
+        /* Colores personalizados de la marca */
+        .bg-brand-blue { background-color: #2a6aff; }
+        .text-brand-blue { color: #2a6aff; }
+        .border-brand-blue { border-color: #2a6aff; }
+        .bg-brand-orange { background-color: #ff8500; }
+        .text-brand-orange { color: #ff8500; }
+
+        /* Estilos para la animación de la tarjeta que se voltea */
+        .card {
+            perspective: 1000px;
+            min-height: 220px;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .card.is-flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .card-front {
+            background-color: white;
+        }
+        .card-back {
+            background-color: #f8f9fa;
+            transform: rotateY(180deg);
+            border: 1px solid #e2e8f0;
+        }
+        .tab-active {
+            border-bottom: 3px solid #2a6aff;
+            color: #2a6aff;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-800">
+
+    <!-- Vista de Login -->
+    <div id="login-view" class="min-h-screen bg-brand-blue flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-md bg-white rounded-xl shadow-2xl p-8 space-y-6 text-center">
+            <img src="https://i.ibb.co/m5QcyKWg/Logo-CNCI.png" alt="Logo CNCI" class="mx-auto h-16 w-auto">
+            <div class="space-y-2">
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Evaluación Modular 📝</h1>
+                <p class="text-lg text-gray-600">Departamento de Servicios Estudiantiles</p>
+                <p class="font-semibold text-brand-orange text-xl">Módulo M8, Agosto 2025</p>
+            </div>
+            <p class="text-gray-700">Consulta tu desempeño del módulo de manera detallada ingresando tu usuario Vici.</p>
+            <div>
+                <input type="text" id="userInput" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-blue transition duration-200" placeholder="Ej: Asesor01">
+                <p id="error-message" class="text-red-500 text-sm mt-2 hidden">Usuario no encontrado. Inténtalo de nuevo.</p>
+            </div>
+            <button id="loginButton" class="w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transform hover:scale-105 transition duration-300">
+                Consultar mi Evaluación 🚀
+            </button>
+        </div>
+    </div>
+
+    <!-- Vista de Evaluación -->
+    <div id="evaluation-view" class="hidden min-h-screen bg-gray-50 p-4 md:p-8">
+        <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 id="advisorName" class="text-3xl font-bold text-gray-900"></h1>
+                    <p id="advisorId" class="text-md text-gray-500"></p>
+                </div>
+                <button id="backButton" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-200">
+                    &larr; Volver
+                </button>
+            </div>
+
+            <!-- Pestañas de Navegación -->
+            <div class="border-b border-gray-200 mb-6">
+                <nav class="flex space-x-4" aria-label="Tabs">
+                    <button class="tab-link tab-active py-3 px-4 text-gray-500 hover:text-brand-blue transition" data-tab="resumen">Resumen General 📊</button>
+                    <button class="tab-link py-3 px-4 text-gray-500 hover:text-brand-blue transition" data-tab="tendencias">Tendencias 📈</button>
+                    <button class="tab-link py-3 px-4 text-gray-500 hover:text-brand-blue transition" data-tab="insignias">Insignias 🏅</button>
+                    <button class="tab-link py-3 px-4 text-gray-500 hover:text-brand-blue transition" data-tab="plan">Plan de Mejora 🎯</button>
+                </nav>
+            </div>
+
+            <!-- Contenido de las Pestañas -->
+            <div id="tab-content">
+                <!-- Resumen General -->
+                <div id="resumen" class="tab-pane space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-gray-100 p-6 rounded-lg">
+                            <h3 class="font-bold text-lg mb-2">Calificación General ⭐</h3>
+                            <div class="w-full bg-gray-200 rounded-full h-4">
+                                <div id="generalScoreBar" class="bg-brand-blue h-4 rounded-full text-xs text-white text-center flex items-center justify-center"></div>
+                            </div>
+                            <p id="generalScoreText" class="text-right font-bold text-lg mt-1 text-brand-blue"></p>
+                        </div>
+                        <div class="bg-gray-100 p-6 rounded-lg">
+                            <h3 class="font-bold text-lg mb-2">Meta de Llamadas 📞</h3>
+                            <div class="w-full bg-gray-200 rounded-full h-4">
+                                <div id="callGoalBar" class="bg-brand-orange h-4 rounded-full text-xs text-white text-center flex items-center justify-center"></div>
+                            </div>
+                            <p id="callGoalText" class="text-right font-bold text-lg mt-1 text-brand-orange"></p>
+                        </div>
+                    </div>
+                    <!-- Tarjetas de Criterios -->
+                    <div id="criteria-grid" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
+                        <!-- Las tarjetas se generan dinámicamente aquí -->
+                    </div>
+                    <!-- Comentarios Generales -->
+                    <div class="bg-gray-100 p-6 rounded-lg">
+                        <h3 class="font-bold text-lg mb-2">Comentarios Generales del Supervisor 🧑‍🏫</h3>
+                        <p id="generalComments" class="text-gray-700"></p>
+                    </div>
+                    <div class="text-center mt-8">
+                        <a id="detailsLink" href="#" target="_blank" class="bg-brand-blue hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transform hover:scale-105 transition duration-300 inline-block">
+                            Detalles de Evaluación 📄
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Tendencias -->
+                <div id="tendencias" class="tab-pane hidden space-y-8">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="font-bold text-xl mb-4 text-center">Gráfica Anual de Desempeño 🗓️</h3>
+                        <div class="w-full" style="max-height: 400px;">
+                            <canvas id="trendsChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                        <div class="bg-gray-100 p-6 rounded-lg">
+                            <h4 class="font-semibold text-gray-600">Hace 2 Meses</h4>
+                            <p id="month-2" class="text-3xl font-bold"></p>
+                        </div>
+                        <div class="bg-gray-100 p-6 rounded-lg">
+                            <h4 class="font-semibold text-gray-600">Mes Anterior</h4>
+                            <p id="month-1" class="text-3xl font-bold"></p>
+                        </div>
+                        <div class="bg-gray-100 p-6 rounded-lg">
+                            <h4 class="font-semibold text-gray-600">Mes Actual</h4>
+                            <p id="month-current" class="text-3xl font-bold"></p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-green-50 p-6 rounded-lg border border-green-200">
+                            <h3 class="font-bold text-lg mb-2">La Mayor Mejora ✅</h3>
+                            <p id="majorImprovement" class="text-gray-700"></p>
+                        </div>
+                        <div class="bg-red-50 p-6 rounded-lg border border-red-200">
+                            <h3 class="font-bold text-lg mb-2">Área Crítica ⚠️</h3>
+                            <p id="criticalArea" class="text-gray-700"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insignias -->
+                <div id="insignias" class="tab-pane hidden space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-gray-100 p-6 rounded-lg">
+                            <h3 class="font-bold text-xl mb-4">Insignias Obtenidas 🎉</h3>
+                            <ul id="obtainedBadges" class="space-y-3">
+                                <!-- Insignias obtenidas se generan aquí -->
+                            </ul>
+                        </div>
+                        <div class="bg-gray-100 p-6 rounded-lg">
+                            <h3 class="font-bold text-xl mb-4">Próximas Insignias 🚀</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <h4 class="font-semibold text-lg">Fortalezas 💪</h4>
+                                    <ul id="strengths" class="list-disc list-inside text-gray-700">
+                                        <!-- Fortalezas se generan aquí -->
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-lg">Áreas de Oportunidad 🌱</h4>
+                                    <ul id="opportunities" class="list-disc list-inside text-gray-700">
+                                        <!-- Oportunidades se generan aquí -->
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Plan de Mejora -->
+                <div id="plan" class="tab-pane hidden text-center">
+                    <div class="bg-gray-100 p-8 rounded-lg max-w-4xl mx-auto">
+                        <h3 class="font-bold text-2xl mb-4">Instrucciones para el Plan de Mejora ✍️</h3>
+                        <p id="planInstructions" class="text-gray-700 leading-relaxed mb-6"></p>
+                        <a id="planLink" href="#" target="_blank" class="bg-brand-orange hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transform hover:scale-105 transition duration-300 inline-block">
+                            Establecer mi Plan de Mejora
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+// --- BASE DE DATOS DE ASESORES (Información actualizada desde CSV) ---
+const advisorData = {
+    "asesor01": {
+        name: "Ana Sofía Gutiérrez",
+        generalScore: 92,
+        callGoal: 95,
+        detailsLink: "https://docs.google.com/document/d/1example01",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example01",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 95, comment: "Excelente seguimiento a estudiantes en riesgo." }, quality: { score: 93, comment: "Comunicación clara y empática." } },
+            "Reincorporación 🔄": { supervision: { score: 88, comment: "Buena tasa de éxito en reincorporaciones." }, quality: { score: 90, comment: "Argumentos persuasivos y efectivos." } },
+            "Procesos ⚙️": { supervision: { score: 98, comment: "Dominio total de los procesos internos." }, quality: { score: 95, comment: "Mínimos errores en la gestión de trámites." } },
+            "Llamada 🗣️": { supervision: { score: 90, comment: "Tono de voz amable y profesional." }, quality: { score: 88, comment: "Sigue los guiones de manera natural." } },
+            "WhatsApp 💬": { supervision: { score: 85, comment: "Respuestas rápidas y eficientes." }, quality: { score: 87, comment: "Uso adecuado de emojis y lenguaje cercano." } },
+            "Correo electrónico 📧": { supervision: { score: 92, comment: "Redacción impecable y profesional." }, quality: { score: 94, comment: "Información siempre completa y clara." } },
+            "Viva Engage 👍": { supervision: { score: 80, comment: "Participación activa en la comunidad." }, quality: { score: 82, comment: "Aporta valor en sus publicaciones." } },
+            "Actividades administrativas 📋": { supervision: { score: 96, comment: "Reportes entregados a tiempo y sin errores." }, quality: { score: 94, comment: "Organización y gestión documental excelente." } }
+        },
+        generalComments: "Ana Sofía ha demostrado un desempeño excepcional este módulo. Su compromiso con los procesos y la calidad de atención es un ejemplo para el equipo. ¡Felicidades! 🥳",
+        trends: {
+            annualData: [85, 87, 86, 88, 90, 91, 89, 92, 93, 91, 90, 92],
+            monthlyComparison: { prev2: 90, prev1: 91, current: 92 },
+            majorImprovement: "Incremento del 5% en la tasa de reincorporación, superando la meta del equipo.",
+            criticalArea: "Mantener la agilidad en respuestas de WhatsApp durante picos de alta demanda."
+        },
+        badges: {
+            obtained: ["🏆 Maestro(a) de Procesos", "🥇 Excelencia en Retención", "⭐ Calidad Superior"],
+            strengths: ["Dominio de procesos", "Comunicación efectiva"],
+            opportunities: ["Optimizar gestión del tiempo en tareas simultáneas"]
+        }
+    },
+    "asesor02": {
+        name: "Carlos Alberto Vélez",
+        generalScore: 85,
+        callGoal: 100,
+        detailsLink: "https://docs.google.com/document/d/1example02",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example02",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 80, comment: "Puede mejorar la proactividad con alumnos." }, quality: { score: 82, comment: "Argumentos sólidos, pero a veces genéricos." } },
+            "Reincorporación 🔄": { supervision: { score: 90, comment: "Muy buen manejo de objeciones." }, quality: { score: 88, comment: "Logra conectar con los ex-alumnos." } },
+            "Procesos ⚙️": { supervision: { score: 85, comment: "Conoce bien los procesos más comunes." }, quality: { score: 84, comment: "Se recomienda repasar procesos especiales." } },
+            "Llamada 🗣️": { supervision: { score: 92, comment: "Excelente dicción y claridad." }, quality: { score: 90, comment: "Mantiene una escucha activa muy efectiva." } },
+            "WhatsApp 💬": { supervision: { score: 88, comment: "Tiempos de respuesta dentro del estándar." }, quality: { score: 86, comment: "Buena gestión de múltiples conversaciones." } },
+            "Correo electrónico 📧": { supervision: { score: 78, comment: "A veces omite detalles en las respuestas." }, quality: { score: 80, comment: "La estructura de los correos puede mejorar." } },
+            "Viva Engage 👍": { supervision: { score: 75, comment: "Poca participación este mes." }, quality: { score: 76, comment: "Sus publicaciones son pertinentes." } },
+            "Actividades administrativas 📋": { supervision: { score: 89, comment: "Entrega de reportes en tiempo." }, quality: { score: 88, comment: "Información correcta y bien organizada." } }
+        },
+        generalComments: "Carlos es un asesor muy sólido, especialmente en la comunicación verbal. El área de oportunidad principal está en la comunicación escrita y la participación en plataformas internas. ¡Vamos por más! 💪",
+        trends: {
+            annualData: [80, 82, 81, 83, 85, 84, 86, 85, 84, 86, 85, 85],
+            monthlyComparison: { prev2: 86, prev1: 85, current: 85 },
+            majorImprovement: "Mejora constante en el manejo de objeciones durante las llamadas de reincorporación.",
+            criticalArea: "Atención al detalle en la redacción de correos electrónicos para evitar re-consultas."
+        },
+        badges: {
+            obtained: ["📞 Rey de la Llamada", "🤝 Negociador Experto"],
+            strengths: ["Comunicación verbal", "Manejo de objeciones"],
+            opportunities: ["Comunicación escrita", "Proactividad en Viva Engage"]
+        }
+    },
+    "asesor03": {
+        name: "Asesor de Ejemplo 3",
+        generalScore: 81,
+        callGoal: 98,
+        detailsLink: "https://docs.google.com/document/d/1example03",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example03",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 78, comment: "Necesita ser más proactivo." }, quality: { score: 80, comment: "Argumentos correctos." } },
+            "Reincorporación 🔄": { supervision: { score: 88, comment: "Buen manejo de objeciones." }, quality: { score: 86, comment: "Conecta bien con los demás." } },
+            "Procesos ⚙️": { supervision: { score: 83, comment: "Conoce los procesos básicos." }, quality: { score: 82, comment: "Repasar procesos complejos." } },
+            "Llamada 🗣️": { supervision: { score: 90, comment: "Claro y conciso." }, quality: { score: 88, comment: "Escucha activa." } },
+            "WhatsApp 💬": { supervision: { score: 86, comment: "Responde a tiempo." }, quality: { score: 84, comment: "Gestiona bien los chats." } },
+            "Correo electrónico 📧": { supervision: { score: 76, comment: "Revisar ortografía." }, quality: { score: 78, comment: "Puede mejorar la estructura." } },
+            "Viva Engage 👍": { supervision: { score: 73, comment: "Participación baja." }, quality: { score: 74, comment: "Publicaciones ocasionales." } },
+            "Actividades administrativas 📋": { supervision: { score: 87, comment: "Reportes a tiempo." }, quality: { score: 86, comment: "Buena organización." } }
+        },
+        generalComments: "Desempeño consistente este mes. Área de oportunidad en la comunicación por correo electrónico.",
+        trends: {
+            annualData: [79, 81, 80, 82, 84, 83, 85, 84, 83, 85, 84, 84],
+            monthlyComparison: { prev2: 85, prev1: 84, current: 84 },
+            majorImprovement: "Mantuvo un buen nivel en la calidad de las llamadas.",
+            criticalArea: "Mejorar la participación en Viva Engage."
+        },
+        badges: {
+            obtained: ["📞 Rey de la Llamada"],
+            strengths: ["Comunicación verbal"],
+            opportunities: ["Comunicación escrita"]
+        }
+    },
+    "asesor04": {
+        name: "Asesor de Ejemplo 4",
+        generalScore: 82,
+        callGoal: 99,
+        detailsLink: "https://docs.google.com/document/d/1example04",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example04",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 79, comment: "Proactividad promedio." }, quality: { score: 81, comment: "Argumentos sólidos." } },
+            "Reincorporación 🔄": { supervision: { score: 89, comment: "Manejo de objeciones efectivo." }, quality: { score: 87, comment: "Buena conexión con ex-alumnos." } },
+            "Procesos ⚙️": { supervision: { score: 84, comment: "Dominio de procesos comunes." }, quality: { score: 83, comment: "Repasar procesos de becas." } },
+            "Llamada 🗣️": { supervision: { score: 91, comment: "Dicción clara." }, quality: { score: 89, comment: "Escucha efectiva." } },
+            "WhatsApp 💬": { supervision: { score: 87, comment: "Respuestas rápidas." }, quality: { score: 85, comment: "Buena gestión de chats." } },
+            "Correo electrónico 📧": { supervision: { score: 77, comment: "Correos claros pero breves." }, quality: { score: 79, comment: "Estructura de correo simple." } },
+            "Viva Engage 👍": { supervision: { score: 74, comment: "Participación esporádica." }, quality: { score: 75, comment: "Publicaciones pertinentes." } },
+            "Actividades administrativas 📋": { supervision: { score: 88, comment: "Reportes puntuales." }, quality: { score: 87, comment: "Organización adecuada." } }
+        },
+        generalComments: "Buen desempeño general, con una notable habilidad en la comunicación verbal. Se sugiere fortalecer la comunicación escrita.",
+        trends: {
+            annualData: [81, 83, 82, 84, 86, 85, 87, 86, 85, 87, 86, 86],
+            monthlyComparison: { prev2: 87, prev1: 86, current: 86 },
+            majorImprovement: "Incremento en la velocidad de respuesta de WhatsApp.",
+            criticalArea: "Atención a los detalles en los procesos administrativos complejos."
+        },
+        badges: {
+            obtained: ["📞 Rey de la Llamada", "🤝 Negociador Experto"],
+            strengths: ["Comunicación verbal", "Agilidad en WhatsApp"],
+            opportunities: ["Detalle en procesos", "Comunicación por correo"]
+        }
+    },
+    "asesor05": {
+        name: "Asesor de Ejemplo 5",
+        generalScore: 83,
+        callGoal: 100,
+        detailsLink: "https://docs.google.com/document/d/1example05",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example05",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 81, comment: "Mejorar seguimiento proactivo." }, quality: { score: 83, comment: "Argumentos bien estructurados." } },
+            "Reincorporación 🔄": { supervision: { score: 91, comment: "Excelente manejo de objeciones." }, quality: { score: 89, comment: "Conexión empática." } },
+            "Procesos ⚙️": { supervision: { score: 86, comment: "Conocimiento sólido de procesos." }, quality: { score: 85, comment: "Repasar normativas nuevas." } },
+            "Llamada 🗣️": { supervision: { score: 93, comment: "Comunicación verbal excelente." }, quality: { score: 91, comment: "Escucha activa y paciente." } },
+            "WhatsApp 💬": { supervision: { score: 89, comment: "Tiempos de respuesta óptimos." }, quality: { score: 87, comment: "Gestión de múltiples chats eficiente." } },
+            "Correo electrónico 📧": { supervision: { score: 79, comment: "Correos completos." }, quality: { score: 81, comment: "Buena estructura de correos." } },
+            "Viva Engage 👍": { supervision: { score: 76, comment: "Participación activa." }, quality: { score: 77, comment: "Publicaciones de valor." } },
+            "Actividades administrativas 📋": { supervision: { score: 90, comment: "Reportes sin errores." }, quality: { score: 89, comment: "Organización impecable." } }
+        },
+        generalComments: "Un mes muy productivo para el asesor. Destaca en la comunicación oral y la gestión de procesos. Hay que mantener la participación en Engage.",
+        trends: {
+            annualData: [79, 81, 80, 82, 84, 83, 85, 84, 83, 85, 84, 84],
+            monthlyComparison: { prev2: 85, prev1: 84, current: 84 },
+            majorImprovement: "Logró la calificación más alta del equipo en 'Llamada'.",
+            criticalArea: "Mantener la consistencia en la entrega de reportes administrativos."
+        },
+        badges: {
+            obtained: ["📞 Rey de la Llamada", "🤝 Negociador Experto"],
+            strengths: ["Comunicación verbal", "Manejo de objeciones"],
+            opportunities: ["Proactividad en Viva Engage"]
+        }
+    },
+    "asesor06": {
+        name: "Asesor de Ejemplo 6",
+        generalScore: 84,
+        callGoal: 97,
+        detailsLink: "https://docs.google.com/document/d/1example06",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example06",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 82, comment: "Proactividad en desarrollo." }, quality: { score: 84, comment: "Argumentos claros." } },
+            "Reincorporación 🔄": { supervision: { score: 92, comment: "Manejo de objeciones superior." }, quality: { score: 90, comment: "Crea buen rapport." } },
+            "Procesos ⚙️": { supervision: { score: 87, comment: "Conoce bien los procesos." }, quality: { score: 86, comment: "Repasar cambios recientes." } },
+            "Llamada 🗣️": { supervision: { score: 94, comment: "Dicción y claridad impecables." }, quality: { score: 92, comment: "Demuestra escucha activa." } },
+            "WhatsApp 💬": { supervision: { score: 90, comment: "Respuestas muy rápidas." }, quality: { score: 88, comment: "Excelente gestión de chats." } },
+            "Correo electrónico 📧": { supervision: { score: 80, comment: "Correos bien redactados." }, quality: { score: 82, comment: "Estructura profesional." } },
+            "Viva Engage 👍": { supervision: { score: 77, comment: "Participación consistente." }, quality: { score: 78, comment: "Aporta a la comunidad." } },
+            "Actividades administrativas 📋": { supervision: { score: 91, comment: "Reportes puntuales y correctos." }, quality: { score: 90, comment: "Muy buena organización." } }
+        },
+        generalComments: "Excelente desempeño en las métricas de comunicación. El asesor muestra un gran potencial y una actitud positiva.",
+        trends: {
+            annualData: [80, 82, 81, 83, 85, 84, 86, 85, 84, 86, 85, 85],
+            monthlyComparison: { prev2: 86, prev1: 85, current: 85 },
+            majorImprovement: "Mejora notable en la redacción de correos electrónicos este mes.",
+            criticalArea: "Continuar repasando las actualizaciones de los procesos internos."
+        },
+        badges: {
+            obtained: ["📞 Rey de la Llamada", "🤝 Negociador Experto"],
+            strengths: ["Comunicación verbal y escrita"],
+            opportunities: ["Conocimiento de procesos actualizados"]
+        }
+    },
+    "asesor07": {
+        name: "Asesor de Ejemplo 7",
+        generalScore: 80,
+        callGoal: 96,
+        detailsLink: "https://docs.google.com/document/d/1example07",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example07",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 77, comment: "Necesita mayor proactividad." }, quality: { score: 79, comment: "Argumentos a veces genéricos." } },
+            "Reincorporación 🔄": { supervision: { score: 87, comment: "Buen manejo de objeciones." }, quality: { score: 85, comment: "Logra conectar." } },
+            "Procesos ⚙️": { supervision: { score: 82, comment: "Conoce los procesos clave." }, quality: { score: 81, comment: "Repasar procesos de titulación." } },
+            "Llamada 🗣️": { supervision: { score: 89, comment: "Comunicación clara." }, quality: { score: 87, comment: "Escucha con atención." } },
+            "WhatsApp 💬": { supervision: { score: 85, comment: "Respuestas dentro del límite." }, quality: { score: 83, comment: "Gestiona bien los chats." } },
+            "Correo electrónico 📧": { supervision: { score: 75, comment: "Faltan detalles en correos." }, quality: { score: 77, comment: "Mejorar estructura de correos." } },
+            "Viva Engage 👍": { supervision: { score: 72, comment: "Participación muy baja." }, quality: { score: 73, comment: "Publicaciones escasas." } },
+            "Actividades administrativas 📋": { supervision: { score: 86, comment: "Reportes a tiempo." }, quality: { score: 85, comment: "Organización aceptable." } }
+        },
+        generalComments: "El asesor cumple con los mínimos esperados. Es crucial enfocarse en mejorar la proactividad y la comunicación escrita para el siguiente módulo.",
+        trends: {
+            annualData: [79, 81, 80, 82, 84, 83, 85, 84, 83, 85, 84, 84],
+            monthlyComparison: { prev2: 85, prev1: 84, current: 84 },
+            majorImprovement: "Mantuvo la meta de llamadas durante todo el mes.",
+            criticalArea: "Mejorar la calidad y detalle de los correos electrónicos."
+        },
+        badges: {
+            obtained: ["🤝 Negociador Experto"],
+            strengths: ["Manejo de objeciones"],
+            opportunities: ["Comunicación escrita", " Proactividad"]
+        }
+    },
+    "asesor08": {
+        name: "Asesor de Ejemplo 8",
+        generalScore: 81,
+        callGoal: 98,
+        detailsLink: "https://docs.google.com/document/d/1example08",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example08",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 78, comment: "Proactividad mejorable." }, quality: { score: 80, comment: "Argumentos sólidos." } },
+            "Reincorporación 🔄": { supervision: { score: 88, comment: "Manejo de objeciones bueno." }, quality: { score: 86, comment: "Conecta con facilidad." } },
+            "Procesos ⚙️": { supervision: { score: 83, comment: "Conoce procesos importantes." }, quality: { score: 82, comment: "Repasar procesos de pagos." } },
+            "Llamada 🗣️": { supervision: { score: 90, comment: "Dicción clara." }, quality: { score: 88, comment: "Escucha activa." } },
+            "WhatsApp 💬": { supervision: { score: 86, comment: "Respuestas rápidas." }, quality: { score: 84, comment: "Buena gestión de chats." } },
+            "Correo electrónico 📧": { supervision: { score: 76, comment: "Correos correctos." }, quality: { score: 78, comment: "Estructura de correo estándar." } },
+            "Viva Engage 👍": { supervision: { score: 73, comment: "Participación baja." }, quality: { score: 74, comment: "Publica ocasionalmente." } },
+            "Actividades administrativas 📋": { supervision: { score: 87, comment: "Reportes puntuales." }, quality: { score: 86, comment: "Organización correcta." } }
+        },
+        generalComments: "Desempeño estable. Se recomienda un mayor enfoque en la participación en plataformas internas y en la personalización de la comunicación.",
+        trends: {
+            annualData: [81, 83, 82, 84, 86, 85, 87, 86, 85, 87, 86, 86],
+            monthlyComparison: { prev2: 87, prev1: 86, current: 86 },
+            majorImprovement: "Consistencia en la calidad de las llamadas de reincorporación.",
+            criticalArea: "Incrementar la participación y el aporte de valor en Viva Engage."
+        },
+        badges: {
+            obtained: ["📞 Rey de la Llamada"],
+            strengths: ["Comunicación verbal"],
+            opportunities: ["Participación en Viva Engage"]
+        }
+    },
+    "asesor09": {
+        name: "Asesor de Ejemplo 9",
+        generalScore: 82,
+        callGoal: 100,
+        detailsLink: "https://docs.google.com/document/d/1example09",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example09",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 80, comment: "Buena proactividad." }, quality: { score: 82, comment: "Argumentos persuasivos." } },
+            "Reincorporación 🔄": { supervision: { score: 90, comment: "Excelente manejo de objeciones." }, quality: { score: 88, comment: "Crea un ambiente de confianza." } },
+            "Procesos ⚙️": { supervision: { score: 85, comment: "Dominio de procesos." }, quality: { score: 84, comment: "Repasar procesos de baja." } },
+            "Llamada 🗣️": { supervision: { score: 92, comment: "Comunicación muy clara." }, quality: { score: 90, comment: "Escucha con empatía." } },
+            "WhatsApp 💬": { supervision: { score: 88, comment: "Respuestas inmediatas." }, quality: { score: 86, comment: "Gestiona chats eficazmente." } },
+            "Correo electrónico 📧": { supervision: { score: 78, comment: "Correos detallados." }, quality: { score: 80, comment: "Buena estructura." } },
+            "Viva Engage 👍": { supervision: { score: 75, comment: "Participación regular." }, quality: { score: 76, comment: "Publicaciones útiles." } },
+            "Actividades administrativas 📋": { supervision: { score: 89, comment: "Reportes a tiempo y correctos." }, quality: { score: 88, comment: "Excelente organización." } }
+        },
+        generalComments: "Un asesor muy completo y fiable. Su manejo de objeciones y conocimiento de procesos son sus puntos más fuertes.",
+        trends: {
+            annualData: [79, 81, 80, 82, 84, 83, 85, 84, 83, 85, 84, 84],
+            monthlyComparison: { prev2: 85, prev1: 84, current: 84 },
+            majorImprovement: "Calificación perfecta en la meta de llamadas.",
+            criticalArea: "Continuar desarrollando habilidades de comunicación escrita para alcanzar la excelencia."
+        },
+        badges: {
+            obtained: ["📞 Rey de la Llamada", "🤝 Negociador Experto"],
+            strengths: ["Manejo de objeciones", " Procesos"],
+            opportunities: ["Comunicación escrita"]
+        }
+    },
+    "asesor10": {
+        name: "Asesor de Ejemplo 10",
+        generalScore: 83,
+        callGoal: 99,
+        detailsLink: "https://docs.google.com/document/d/1example10",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example10",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 81, comment: "Proactividad consistente." }, quality: { score: 83, comment: "Argumentos bien fundamentados." } },
+            "Reincorporación 🔄": { supervision: { score: 91, comment: "Manejo de objeciones experto." }, quality: { score: 89, comment: "Conexión genuina." } },
+            "Procesos ⚙️": { supervision: { score: 86, comment: "Conocimiento profundo de procesos." }, quality: { score: 85, comment: "Repasar normativas de servicio social." } },
+            "Llamada 🗣️": { supervision: { score: 93, comment: "Claridad y profesionalismo." }, quality: { score: 91, comment: "Escucha activa y reflexiva." } },
+            "WhatsApp 💬": { supervision: { score: 89, comment: "Respuestas muy ágiles." }, quality: { score: 87, comment: "Gestión de chats impecable." } },
+            "Correo electrónico 📧": { supervision: { score: 79, comment: "Correos profesionales." }, quality: { score: 81, comment: "Estructura de correo excelente." } },
+            "Viva Engage 👍": { supervision: { score: 76, comment: "Participación activa." }, quality: { score: 77, comment: "Aporta ideas en Engage." } },
+            "Actividades administrativas 📋": { supervision: { score: 90, comment: "Reportes puntuales." }, quality: { score: 89, comment: "Organización de alto nivel." } }
+        },
+        generalComments: "Desempeño destacado. El asesor es un referente en la gestión de reincorporaciones y procesos complejos.",
+        trends: {
+            annualData: [80, 82, 81, 83, 85, 84, 86, 85, 84, 86, 85, 85],
+            monthlyComparison: { prev2: 86, prev1: 85, current: 85 },
+            majorImprovement: "Lideró al equipo en la métrica de 'Reincorporación'.",
+            criticalArea: "Buscar oportunidades para compartir su conocimiento en procesos con el resto del equipo."
+        },
+        badges: {
+            obtained: ["🤝 Negociador Experto", "⚙️ Experto en Procesos"],
+            strengths: ["Manejo de objeciones", " Conocimiento de procesos"],
+            opportunities: ["Liderazgo y mentoría"]
+        }
+    },
+    "asesor11": {
+        name: "Asesor de Ejemplo 11",
+        generalScore: 84,
+        callGoal: 95,
+        detailsLink: "https://docs.google.com/document/d/1example11",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example11",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 82, comment: "Buena iniciativa." }, quality: { score: 84, comment: "Argumentos convincentes." } },
+            "Reincorporación 🔄": { supervision: { score: 92, comment: "Manejo de objeciones muy bueno." }, quality: { score: 90, comment: "Empatía y conexión." } },
+            "Procesos ⚙️": { supervision: { score: 87, comment: "Dominio de procesos generales." }, quality: { score: 86, comment: "Repasar procesos de equivalencia." } },
+            "Llamada 🗣️": { supervision: { score: 94, comment: "Comunicación verbal fluida." }, quality: { score: 92, comment: "Escucha atenta." } },
+            "WhatsApp 💬": { supervision: { score: 90, comment: "Respuestas rápidas." }, quality: { score: 88, comment: "Gestión de chats eficiente." } },
+            "Correo electrónico 📧": { supervision: { score: 80, comment: "Redacción clara." }, quality: { score: 82, comment: "Buena estructura en correos." } },
+            "Viva Engage 👍": { supervision: { score: 77, comment: "Participación constante." }, quality: { score: 78, comment: "Publicaciones relevantes." } },
+            "Actividades administrativas 📋": { supervision: { score: 91, comment: "Reportes sin errores." }, quality: { score: 90, comment: "Organización excelente." } }
+        },
+        generalComments: "Un mes de gran crecimiento para el asesor. Ha mejorado notablemente en todas las áreas de comunicación.",
+        trends: {
+            annualData: [79, 81, 80, 82, 84, 83, 85, 84, 83, 85, 84, 84],
+            monthlyComparison: { prev2: 85, prev1: 84, current: 84 },
+            majorImprovement: "Mejora del 5% en la calificación de 'Correo electrónico' respecto al mes anterior.",
+            criticalArea: "Profundizar en el conocimiento de procesos académicos específicos."
+        },
+        badges: {
+            obtained: ["📞 Rey de la Llamada"],
+            strengths: ["Comunicación verbal y escrita"],
+            opportunities: ["Conocimiento de procesos específicos"]
+        }
+    },
+    "asesor12": {
+        name: "Asesor de Ejemplo 12",
+        generalScore: 80,
+        callGoal: 97,
+        detailsLink: "https://docs.google.com/document/d/1example12",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example12",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 77, comment: "Proactividad inconsistente." }, quality: { score: 79, comment: "Argumentos básicos." } },
+            "Reincorporación 🔄": { supervision: { score: 87, comment: "Manejo de objeciones aceptable." }, quality: { score: 85, comment: "Conecta adecuadamente." } },
+            "Procesos ⚙️": { supervision: { score: 82, comment: "Conoce lo esencial de procesos." }, quality: { score: 81, comment: "Repasar procesos de inscripción." } },
+            "Llamada 🗣️": { supervision: { score: 89, comment: "Habla con claridad." }, quality: { score: 87, comment: "Escucha bien." } },
+            "WhatsApp 💬": { supervision: { score: 85, comment: "Respuestas a tiempo." }, quality: { score: 83, comment: "Gestión de chats correcta." } },
+            "Correo electrónico 📧": { supervision: { score: 75, comment: "Correos muy simples." }, quality: { score: 77, comment: "Mejorar formato de correos." } },
+            "Viva Engage 👍": { supervision: { score: 72, comment: "Participación mínima." }, quality: { score: 73, comment: "Publicaciones escasas." } },
+            "Actividades administrativas 📋": { supervision: { score: 86, comment: "Reportes puntuales." }, quality: { score: 85, comment: "Organización básica." } }
+        },
+        generalComments: "El asesor cumple con las funciones básicas. Se necesita un plan de acción para mejorar la calidad de la comunicación y el conocimiento de procesos.",
+        trends: {
+            annualData: [81, 83, 82, 84, 86, 85, 87, 86, 85, 87, 86, 86],
+            monthlyComparison: { prev2: 87, prev1: 86, current: 86 },
+            majorImprovement: "Mantuvo un buen ritmo en las llamadas salientes.",
+            criticalArea: "Desarrollar un conocimiento más profundo de los procesos y mejorar la redacción."
+        },
+        badges: {
+            obtained: ["🤝 Negociador Experto"],
+            strengths: ["Manejo de objeciones"],
+            opportunities: ["Conocimiento de procesos", " Comunicación escrita"]
+        }
+    },
+    "asesor13": {
+        name: "Asesor de Ejemplo 13",
+        generalScore: 81,
+        callGoal: 99,
+        detailsLink: "https://docs.google.com/document/d/1example13",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example13",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 78, comment: "Puede ser más proactivo." }, quality: { score: 80, comment: "Argumentos correctos." } },
+            "Reincorporación 🔄": { supervision: { score: 88, comment: "Buen manejo de objeciones." }, quality: { score: 86, comment: "Conecta bien." } },
+            "Procesos ⚙️": { supervision: { score: 83, comment: "Conoce los procesos comunes." }, quality: { score: 82, comment: "Repasar procesos administrativos." } },
+            "Llamada 🗣️": { supervision: { score: 90, comment: "Buena dicción." }, quality: { score: 88, comment: "Escucha activa." } },
+            "WhatsApp 💬": { supervision: { score: 86, comment: "Respuestas rápidas." }, quality: { score: 84, comment: "Buena gestión de chats." } },
+            "Correo electrónico 📧": { supervision: { score: 76, comment: "Correos claros." }, quality: { score: 78, comment: "Estructura de correo simple." } },
+            "Viva Engage 👍": { supervision: { score: 73, comment: "Participación ocasional." }, quality: { score: 74, comment: "Publica de vez en cuando." } },
+            "Actividades administrativas 📋": { supervision: { score: 87, comment: "Reportes a tiempo." }, quality: { score: 86, comment: "Organización estándar." } }
+        },
+        generalComments: "Desempeño estable y sin mayores incidentes. El siguiente paso es pasar de un desempeño 'correcto' a uno 'destacado'.",
+        trends: {
+            annualData: [79, 81, 80, 82, 84, 83, 85, 84, 83, 85, 84, 84],
+            monthlyComparison: { prev2: 85, prev1: 84, current: 84 },
+            majorImprovement: "Casi alcanza la meta perfecta de llamadas.",
+            criticalArea: "Buscar la excelencia en la comunicación escrita y la participación proactiva."
+        },
+        badges: {
+            obtained: ["📞 Rey de la Llamada"],
+            strengths: ["Comunicación verbal"],
+            opportunities: ["Comunicación escrita", " Proactividad en Engage"]
+        }
+    },
+    "asesor14": {
+        name: "Asesor de Ejemplo 14",
+        generalScore: 82,
+        callGoal: 100,
+        detailsLink: "https://docs.google.com/document/d/1example14",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example14",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 80, comment: "Iniciativa proactiva." }, quality: { score: 82, comment: "Argumentos bien planteados." } },
+            "Reincorporación 🔄": { supervision: { score: 90, comment: "Manejo de objeciones muy bueno." }, quality: { score: 88, comment: "Genera confianza." } },
+            "Procesos ⚙️": { supervision: { score: 85, comment: "Conoce bien los procesos." }, quality: { score: 84, comment: "Repasar actualizaciones." } },
+            "Llamada 🗣️": { supervision: { score: 92, comment: "Comunicación excelente." }, quality: { score: 90, comment: "Escucha con interés." } },
+            "WhatsApp 💬": { supervision: { score: 88, comment: "Respuestas muy rápidas." }, quality: { score: 86, comment: "Gestión de chats profesional." } },
+            "Correo electrónico 📧": { supervision: { score: 78, comment: "Correos bien redactados." }, quality: { score: 80, comment: "Buena estructura." } },
+            "Viva Engage 👍": { supervision: { score: 75, comment: "Participación buena." }, quality: { score: 76, comment: "Publicaciones interesantes." } },
+            "Actividades administrativas 📋": { supervision: { score: 89, comment: "Reportes puntuales." }, quality: { score: 88, comment: "Organización eficiente." } }
+        },
+        generalComments: "Asesor confiable y con un alto nivel de desempeño en la comunicación. Muestra consistencia y profesionalismo.",
+        trends: {
+            annualData: [80, 82, 81, 83, 85, 84, 86, 85, 84, 86, 85, 85],
+            monthlyComparison: { prev2: 86, prev1: 85, current: 85 },
+            majorImprovement: "Logró la meta de llamadas y mantuvo una alta calidad.",
+            criticalArea: "Mantenerse actualizado con los cambios constantes en los procesos."
+        },
+        badges: {
+            obtained: ["📞 Rey de la Llamada", "🤝 Negociador Experto"],
+            strengths: ["Comunicación verbal", " Manejo de objeciones"],
+            opportunities: ["Actualización constante de procesos"]
+        }
+    },
+    "asesor15": {
+        name: "Asesor de Ejemplo 15",
+        generalScore: 83,
+        callGoal: 98,
+        detailsLink: "https://docs.google.com/document/d/1example15",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example15",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 81, comment: "Proactividad notable." }, quality: { score: 83, comment: "Argumentos sólidos y claros." } },
+            "Reincorporación 🔄": { supervision: { score: 91, comment: "Manejo de objeciones excelente." }, quality: { score: 89, comment: "Conexión empática y efectiva." } },
+            "Procesos ⚙️": { supervision: { score: 86, comment: "Dominio de procesos." }, quality: { score: 85, comment: "Repasar procesos de finanzas." } },
+            "Llamada 🗣️": { supervision: { score: 93, comment: "Comunicación verbal de alto nivel." }, quality: { score: 91, comment: "Escucha activa y paciente." } },
+            "WhatsApp 💬": { supervision: { score: 89, comment: "Respuestas inmediatas." }, quality: { score: 87, comment: "Gestión de chats impecable." } },
+            "Correo electrónico 📧": { supervision: { score: 79, comment: "Correos profesionales y completos." }, quality: { score: 81, comment: "Estructura de correo muy buena." } },
+            "Viva Engage 👍": { supervision: { score: 76, comment: "Participación activa y valiosa." }, quality: { score: 77, comment: "Aporta buenas ideas." } },
+            "Actividades administrativas 📋": { supervision: { score: 90, comment: "Reportes sin errores y a tiempo." }, quality: { score: 89, comment: "Organización sobresaliente." } }
+        },
+        generalComments: "Un desempeño sobresaliente este mes. El asesor es un pilar en el equipo por su conocimiento y habilidades de comunicación.",
+        trends: {
+            annualData: [79, 81, 80, 82, 84, 83, 85, 84, 83, 85, 84, 84],
+            monthlyComparison: { prev2: 85, prev1: 84, current: 84 },
+            majorImprovement: "Excelencia en la gestión de reincorporaciones y retención.",
+            criticalArea: "Compartir sus buenas prácticas en el manejo de objeciones con el equipo."
+        },
+        badges: {
+            obtained: ["🤝 Negociador Experto", "⭐ Calidad Superior"],
+            strengths: ["Manejo de objeciones", " Comunicación empática"],
+            opportunities: ["Mentoría y liderazgo"]
+        }
+    },
+    "asesor16": {
+        name: "Asesor de Ejemplo 16",
+        generalScore: 84,
+        callGoal: 96,
+        detailsLink: "https://docs.google.com/document/d/1example16",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example16",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 82, comment: "Buena proactividad." }, quality: { score: 84, comment: "Argumentos claros y efectivos." } },
+            "Reincorporación 🔄": { supervision: { score: 92, comment: "Manejo de objeciones muy bueno." }, quality: { score: 90, comment: "Conecta bien con los estudiantes." } },
+            "Procesos ⚙️": { supervision: { score: 87, comment: "Conocimiento sólido de procesos." }, quality: { score: 86, comment: "Repasar procesos de servicio social." } },
+            "Llamada 🗣️": { supervision: { score: 94, comment: "Comunicación verbal excelente." }, quality: { score: 92, comment: "Escucha activa y empática." } },
+            "WhatsApp 💬": { supervision: { score: 90, comment: "Respuestas rápidas y precisas." }, quality: { score: 88, comment: "Gestión de chats muy eficiente." } },
+            "Correo electrónico 📧": { supervision: { score: 80, comment: "Correos bien estructurados." }, quality: { score: 82, comment: "Redacción profesional." } },
+            "Viva Engage 👍": { supervision: { score: 77, comment: "Participación constante." }, quality: { score: 78, comment: "Publicaciones útiles." } },
+            "Actividades administrativas 📋": { supervision: { score: 91, comment: "Reportes puntuales." }, quality: { score: 90, comment: "Organización de alto nivel." } }
+        },
+        generalComments: "Excelente mes para el asesor. Demuestra un dominio completo de sus funciones y una gran actitud de servicio.",
+        trends: {
+            annualData: [81, 83, 82, 84, 86, 85, 87, 86, 85, 87, 86, 86],
+            monthlyComparison: { prev2: 87, prev1: 86, current: 86 },
+            majorImprovement: "Mejora continua en todas las métricas de calidad.",
+            criticalArea: "Explorar áreas de especialización dentro de los procesos académicos."
+        },
+        badges: {
+            obtained: ["📞 Rey de la Llamada", "⭐ Calidad Superior"],
+            strengths: ["Comunicación verbal y escrita", " Calidad"],
+            opportunities: ["Especialización en procesos"]
+        }
+    },
+    "asesor17": {
+        name: "Asesor de Ejemplo 17",
+        generalScore: 80,
+        callGoal: 95,
+        detailsLink: "https://docs.google.com/document/d/1example17",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example17",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 77, comment: "Proactividad a mejorar." }, quality: { score: 79, comment: "Argumentos estándar." } },
+            "Reincorporación 🔄": { supervision: { score: 87, comment: "Manejo de objeciones correcto." }, quality: { score: 85, comment: "Conexión adecuada." } },
+            "Procesos ⚙️": { supervision: { score: 82, comment: "Conocimiento básico de procesos." }, quality: { score: 81, comment: "Requiere repasar procesos." } },
+            "Llamada 🗣️": { supervision: { score: 89, comment: "Comunicación clara." }, quality: { score: 87, comment: "Escucha bien." } },
+            "WhatsApp 💬": { supervision: { score: 85, comment: "Respuestas a tiempo." }, quality: { score: 83, comment: "Gestión de chats estándar." } },
+            "Correo electrónico 📧": { supervision: { score: 75, comment: "Correos simples." }, quality: { score: 77, comment: "Mejorar la estructura." } },
+            "Viva Engage 👍": { supervision: { score: 72, comment: "Participación baja." }, quality: { score: 73, comment: "Publicaciones escasas." } },
+            "Actividades administrativas 📋": { supervision: { score: 86, comment: "Reportes a tiempo." }, quality: { score: 85, comment: "Organización básica." } }
+        },
+        generalComments: "Desempeño que cumple con lo mínimo. Es fundamental un mayor compromiso para mejorar en las áreas de oportunidad detectadas.",
+        trends: {
+            annualData: [79, 81, 80, 82, 84, 83, 85, 84, 83, 85, 84, 84],
+            monthlyComparison: { prev2: 85, prev1: 84, current: 84 },
+            majorImprovement: "Cumplió con la meta de llamadas del mes.",
+            criticalArea: "Enfocarse en la calidad de la comunicación escrita y el conocimiento de procesos."
+        },
+        badges: {
+            obtained: ["🤝 Negociador Experto"],
+            strengths: ["Manejo de objeciones"],
+            opportunities: ["Calidad de comunicación", " Conocimiento de procesos"]
+        }
+    },
+    "asesor18": {
+        name: "Asesor de Ejemplo 18",
+        generalScore: 81,
+        callGoal: 98,
+        detailsLink: "https://docs.google.com/document/d/1example18",
+        planInstructions: "A partir de los resultados de tu evaluación, identifica de 3 a 4 áreas de oportunidad y describe acciones concretas que puedas implementar para mejorarlas. Indica el plazo estimado y cómo darás seguimiento a cada acción. Sé específico y realista para facilitar el cumplimiento y la evaluación de avances. Ingresa al siguiente enlace, redacta y establece tu plan de mejora antes del 11 de septiembre de 2025.",
+        planLink: "https://docs.google.com/document/d/2example18",
+        criteria: {
+            "Retención 🎓": { supervision: { score: 78, comment: "Proactividad promedio." }, quality: { score: 80, comment: "Argumentos sólidos." } },
+            "Reincorporación 🔄": { supervision: { score: 88, comment: "Buen manejo de objeciones." }, quality: { score: 86, comment: "Buena conexión." } },
+            "Procesos ⚙️": { supervision: { score: 83, comment: "Conoce bien los procesos." }, quality: { score: 82, comment: "Repasar procesos de titulación." } },
+            "Llamada 🗣️": { supervision: { score: 90, comment: "Dicción clara y profesional." }, quality: { score: 88, comment: "Escucha activa." } },
+            "WhatsApp 💬": { supervision: { score: 86, comment: "Respuestas rápidas." }, quality: { score: 84, comment: "Buena gestión de chats." } },
+            "Correo electrónico 📧": { supervision: { score: 76, comment: "Correos claros y concisos." }, quality: { score: 78, comment: "Estructura de correo adecuada." } },
+            "Viva Engage 👍": { supervision: { score: 73, comment: "Participación mejorable." }, quality: { score: 74, comment: "Publica ocasionalmente." } },
+            "Actividades administrativas 📋": { supervision: { score: 87, comment: "Reportes puntuales." }, quality: { score: 86, comment: "Buena organización." } }
+        },
+        generalComments: "Un desempeño consistente y fiable. El asesor demuestra ser competente en sus tareas diarias. El siguiente nivel es la proactividad.",
+        trends: {
+            annualData: [80, 82, 81, 83, 85, 84, 86, 85, 84, 86, 85, 85],
+            monthlyComparison: { prev2: 86, prev1: 85, current: 85 },
+            majorImprovement: "Mantuvo una alta calidad en las llamadas de seguimiento.",
+            criticalArea: "Incrementar la participación en Viva Engage y proponer nuevas ideas."
+        },
+        badges: {
+            obtained: ["📞 Rey de la Llamada"],
+            strengths: ["Comunicación verbal"],
+            opportunities: ["Proactividad", " Participación en comunidad"]
+        }
+    }
+};
+
+
+// --- LÓGICA DE LA APLICACIÓN ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Elementos del DOM
+    const loginView = document.getElementById('login-view');
+    const evaluationView = document.getElementById('evaluation-view');
+    const userInput = document.getElementById('userInput');
+    const loginButton = document.getElementById('loginButton');
+    const backButton = document.getElementById('backButton');
+    const errorMessage = document.getElementById('error-message');
+    const tabLinks = document.querySelectorAll('.tab-link');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+    let trendsChartInstance = null;
+
+    // --- Lógica de Login ---
+    const handleLogin = () => {
+        const userId = userInput.value.trim().toLowerCase();
+        if (advisorData[userId]) {
+            errorMessage.classList.add('hidden');
+            loadAdvisorInfo(userId);
+            loginView.classList.add('hidden');
+            evaluationView.classList.remove('hidden');
+        } else {
+            errorMessage.classList.remove('hidden');
+            userInput.classList.add('border-red-500');
+        }
+    };
+
+    loginButton.addEventListener('click', handleLogin);
+    userInput.addEventListener('keydown', (e) => {
+        userInput.classList.remove('border-red-500');
+        errorMessage.classList.add('hidden');
+        if (e.key === 'Enter') {
+            handleLogin();
+        }
+    });
+
+    // --- Lógica para Volver al Login ---
+    backButton.addEventListener('click', () => {
+        evaluationView.classList.add('hidden');
+        loginView.classList.remove('hidden');
+        userInput.value = '';
+        // Resetear a la pestaña inicial
+        switchTab('resumen');
+    });
+    
+    // --- Lógica de Pestañas ---
+    const switchTab = (tabId) => {
+        tabPanes.forEach(pane => {
+            pane.classList.add('hidden');
+        });
+        document.getElementById(tabId).classList.remove('hidden');
+
+        tabLinks.forEach(link => {
+            link.classList.remove('tab-active');
+            if (link.dataset.tab === tabId) {
+                link.classList.add('tab-active');
+            }
+        });
+    };
+
+    tabLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            switchTab(link.dataset.tab);
+        });
+    });
+
+    // --- Cargar Datos del Asesor ---
+    const loadAdvisorInfo = (userId) => {
+        const data = advisorData[userId];
+        if (!data) return;
+
+        // Header
+        document.getElementById('advisorName').textContent = data.name;
+        document.getElementById('advisorId').textContent = userId;
+
+        // Cargar datos en cada pestaña
+        loadSummaryTab(data);
+        loadTrendsTab(data);
+        loadBadgesTab(data);
+        loadPlanTab(data);
+    };
+
+    // --- Cargar Pestaña de Resumen ---
+    const loadSummaryTab = (data) => {
+        // Calificación General
+        const generalScoreBar = document.getElementById('generalScoreBar');
+        generalScoreBar.style.width = `${data.generalScore}%`;
+        generalScoreBar.textContent = `${data.generalScore}%`;
+        document.getElementById('generalScoreText').textContent = `${data.generalScore} / 100`;
+
+        // Meta de Llamadas
+        const callGoalBar = document.getElementById('callGoalBar');
+        callGoalBar.style.width = `${data.callGoal}%`;
+        callGoalBar.textContent = `${data.callGoal}%`;
+        document.getElementById('callGoalText').textContent = `${data.callGoal} / 100`;
+
+        // Enlace detalles
+        document.getElementById('detailsLink').href = data.detailsLink;
+
+        // Tarjetas de Criterios
+        const criteriaGrid = document.getElementById('criteria-grid');
+        criteriaGrid.innerHTML = ''; // Limpiar tarjetas anteriores
+        for (const [key, value] of Object.entries(data.criteria)) {
+            const cardHTML = `
+                <div class="card cursor-pointer">
+                    <div class="card-inner">
+                        <div class="card-front flex flex-col justify-between">
+                            <div>
+                                <h4 class="font-bold text-lg text-brand-blue">${key}</h4>
+                                <p class="text-sm text-gray-500 font-semibold">(Supervisión)</p>
+                            </div>
+                            <p class="text-4xl font-bold text-right text-gray-800">${value.supervision.score}</p>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-600">Comentario:</p>
+                                <p class="text-gray-700 text-sm">${value.supervision.comment}</p>
+                            </div>
+                            <p class="text-xs text-center text-gray-400 mt-2">Haz clic para ver Calidad</p>
+                        </div>
+                        <div class="card-back flex flex-col justify-between">
+                            <div>
+                                <h4 class="font-bold text-lg text-brand-orange">${key}</h4>
+                                <p class="text-sm text-gray-500 font-semibold">(Calidad)</p>
+                            </div>
+                            <p class="text-4xl font-bold text-right text-gray-800">${value.quality.score}</p>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-600">Comentario:</p>
+                                <p class="text-gray-700 text-sm">${value.quality.comment}</p>
+                            </div>
+                             <p class="text-xs text-center text-gray-400 mt-2">Haz clic para volver</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            criteriaGrid.innerHTML += cardHTML;
+        }
+        
+        // Añadir evento de volteo a las nuevas tarjetas
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', () => {
+                card.classList.toggle('is-flipped');
+            });
+        });
+
+        // Comentarios Generales
+        document.getElementById('generalComments').textContent = data.generalComments;
+    };
+
+    // --- Cargar Pestaña de Tendencias ---
+    const loadTrendsTab = (data) => {
+        // Comparativa Mensual
+        const { prev2, prev1, current } = data.trends.monthlyComparison;
+        document.getElementById('month-2').textContent = `${prev2}`;
+        document.getElementById('month-1').innerHTML = `${prev1} <span class="text-lg">${prev1 > prev2 ? '📈' : '📉'}</span>`;
+        document.getElementById('month-current').innerHTML = `${current} <span class="text-lg">${current > prev1 ? '📈' : '📉'}</span>`;
+
+        // Métricas Destacadas
+        document.getElementById('majorImprovement').textContent = data.trends.majorImprovement;
+        document.getElementById('criticalArea').textContent = data.trends.criticalArea;
+
+        // Gráfica Anual
+        const ctx = document.getElementById('trendsChart').getContext('2d');
+        if (trendsChartInstance) {
+            trendsChartInstance.destroy(); // Destruir gráfica anterior para evitar solapamiento
+        }
+        trendsChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                datasets: [{
+                    label: 'Puntaje de Evaluación',
+                    data: data.trends.annualData,
+                    borderColor: '#2a6aff',
+                    backgroundColor: 'rgba(42, 106, 255, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#2a6aff',
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        suggestedMin: 70,
+                        suggestedMax: 100
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    };
+    
+    // --- Cargar Pestaña de Insignias ---
+    const loadBadgesTab = (data) => {
+        const obtainedList = document.getElementById('obtainedBadges');
+        obtainedList.innerHTML = '';
+        data.badges.obtained.forEach(badge => {
+            const li = document.createElement('li');
+            li.className = 'bg-white p-3 rounded-md shadow-sm text-lg';
+            li.textContent = badge;
+            obtainedList.appendChild(li);
+        });
+
+        const strengthsList = document.getElementById('strengths');
+        strengthsList.innerHTML = '';
+        data.badges.strengths.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = item;
+            strengthsList.appendChild(li);
+        });
+
+        const opportunitiesList = document.getElementById('opportunities');
+        opportunitiesList.innerHTML = '';
+        data.badges.opportunities.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = item;
+            opportunitiesList.appendChild(li);
+        });
+    };
+
+    // --- Cargar Pestaña de Plan de Mejora ---
+    const loadPlanTab = (data) => {
+        document.getElementById('planInstructions').textContent = data.planInstructions;
+        document.getElementById('planLink').href = data.planLink;
+    };
+});
+</script>
+
+</body>
+</html>
